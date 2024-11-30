@@ -1,0 +1,83 @@
+# # deployment.yaml
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: telemedicine-api
+# spec:
+#   replicas: 2
+#   selector:
+#     matchLabels:
+#       app: telemedicine
+#   template:
+#     metadata:
+#       labels:
+#         app: telemedicine
+#     spec:
+#       containers:
+#       - name: telemedicine-api
+#         image: telemedicine-api:1.0
+#         imagePullPolicy: Never
+#         resources:
+#           requests:
+#             cpu: "200m"
+#             memory: "256Mi"
+#           limits:
+#             cpu: "500m"
+#             memory: "512Mi"
+#         ports:
+#         - containerPort: 5000
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemedicine-api
+  labels:
+    app: telemedicine-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: telemedicine
+  template:
+    metadata:
+      labels:
+        app: telemedicine
+    spec:
+      containers:
+      - name: telemedicine-api
+        image: telemedicine-api:1.0
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: "200m"
+          limits:
+            cpu: "500m"
+      restartPolicy: Always
+
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: telemedicine-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: telemedicine-api
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 20
