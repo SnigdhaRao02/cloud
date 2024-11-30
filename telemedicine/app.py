@@ -4,6 +4,11 @@ import math
 
 app = Flask(__name__)
 
+@app.route('/health')
+def health_check():
+    return 'OK', 200
+
+
 @app.route("/api/consultation/start", methods=["POST"])
 def start_consultation():
     # Simulate consultation start
